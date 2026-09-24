@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, usePoll, useCountdown } from "./api.js";
+import { api, usePoll, useCountdown, useStartBeeps } from "./api.js";
 import { SYMBOLS, Pts, Leaderboard } from "./ui.jsx";
 
 const OUT = { win: "You win! 🎉", draw: "It's a draw 🤝", lose: "You lose 😅", "no move": "You didn't play in time ⏰" };
@@ -12,6 +12,9 @@ export default function Player() {
   const { data, error } = usePoll(() => api(`/state?player_id=${pid}`), 1000, pid);
   const cur = data?.current;
   const left = useCountdown(cur?.ends_at, data?._offset);
+  const startIn = useCountdown(cur?.status === "open" ? cur?.starts_at : null, data?._offset);
+  useStartBeeps(startIn, cur?.status === "open" ? cur.id : null);
+  const getReady = cur?.status === "open" && startIn > 0;
   const mine = (picked && cur && picked.round === cur.id) ? picked.symbol : cur?.my_move;
   const res = cur?.my_result;
 
@@ -70,16 +73,23 @@ export default function Player() {
           {cur.status === "announced" && <p className="big">Get ready. The organizer will start this round soon.</p>}
           {cur.status === "open" && (
             <>
-              <div className="timer">{left}s</div>
+              {getReady ? (
+                <>
+                  <p className="big center">Get ready...</p>
+                  <div className="timer countdown">{startIn}</div>
+                </>
+              ) : (
+                <div className="timer">{left}s</div>
+              )}
               <div className="picks">
                 {["rock", "paper", "scissors"].map((s) => (
-                  <button key={s} className={"pick" + (mine === s ? " sel" : "")} disabled={left === 0} onClick={() => play(s)}>
+                  <button key={s} className={"pick" + (mine === s ? " sel" : "")} disabled={getReady || left === 0} onClick={() => play(s)}>
                     <span>{SYMBOLS[s].icon}</span>{SYMBOLS[s].label}
                   </button>
                 ))}
               </div>
               <p className="mut">
-                {mine && SYMBOLS[mine] ? `${SYMBOLS[mine].label} is locked in. You can change it until time runs out.` : "Pick your symbol."}
+                {mine && SYMBOLS[mine] ? `${SYMBOLS[mine].label} is locked in. You can change it until time runs out.` : getReady ? "Picks open when the countdown ends." : "Pick your symbol."}
               </p>
             </>
           )}
