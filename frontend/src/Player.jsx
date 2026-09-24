@@ -9,7 +9,7 @@ export default function Player() {
   const [name, setName] = useState("");
   const [err, setErr] = useState("");
   const [picked, setPicked] = useState(null);
-  const { data, error } = usePoll(() => api(`/state?player_id=${pid}`), 1000, pid);
+  const { data, error } = usePoll(() => api(`/state?player_id=${pid}`), 400, pid);
   const cur = data?.current;
   const left = useCountdown(cur?.ends_at, data?._offset);
   const startIn = useCountdown(cur?.status === "open" ? cur?.starts_at : null, data?._offset);
