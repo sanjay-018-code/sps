@@ -1,5 +1,50 @@
 import { useEffect, useRef, useState } from "react";
 
+// ---- countdown beeps (Web Audio, no sound files needed) ----
+let ctx = null;
+function audio() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!ctx) ctx = new AC();
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+export function beep(freq = 700, ms = 180) {
+  try {
+    const c = audio();
+    if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    const t = c.currentTime;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + ms / 1000 + 0.02);
+  } catch { /* audio blocked or unsupported */ }
+}
+// Browsers only allow sound after a tap/click, so unlock on the first interaction.
+if (typeof window !== "undefined") {
+  const unlock = () => { audio(); };
+  window.addEventListener("pointerdown", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+}
+
+// Beeps on 3, 2, 1 (short) and GO (long, higher). `startIn` = seconds left in the pre-round countdown.
+export function useStartBeeps(startIn, roundId) {
+  const prev = useRef({ id: null, v: null });
+  useEffect(() => {
+    const p = prev.current;
+    if (p.id !== roundId) { prev.current = { id: roundId, v: startIn }; return; }
+    if (startIn !== p.v) {
+      if (startIn > 0) beep(700, 160);
+      else if (p.v > 0) beep(1200, 500);
+      p.v = startIn;
+    }
+  }, [startIn, roundId]);
+}
+
 const BASE = (import.meta.env.VITE_API_URL || "") + "/api";
 export async function api(path, { method = "GET", body, key } = {}) {
   const res = await fetch(BASE + path, {
