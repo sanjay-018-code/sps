@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+const BASE = (import.meta.env.VITE_API_URL || "") + "/api";
 export async function api(path, { method = "GET", body, key } = {}) {
-  const res = await fetch("/api" + path, {
+  const res = await fetch(BASE + path, {
     method,
     headers: { "Content-Type": "application/json", ...(key ? { "X-Organizer-Key": key } : {}) },
     body: body ? JSON.stringify(body) : undefined,
