@@ -36,7 +36,11 @@ export function useStartBeeps(startIn, roundId) {
   const prev = useRef({ id: null, v: null });
   useEffect(() => {
     const p = prev.current;
-    if (p.id !== roundId) { prev.current = { id: roundId, v: startIn }; return; }
+    if (p.id !== roundId) {          // a round just opened: beep for the number we first see
+      prev.current = { id: roundId, v: startIn };
+      if (roundId && startIn > 0) beep(700, 160);
+      return;
+    }
     if (startIn !== p.v) {
       if (startIn > 0) beep(700, 160);
       else if (p.v > 0) beep(1200, 500);
