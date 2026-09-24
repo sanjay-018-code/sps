@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 ORGANIZER_PASSWORD = os.getenv("ORGANIZER_PASSWORD", "admin123")
+COUNTDOWN = 3   # seconds of "3-2-1" before each round opens for picks
 BEATS = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
 
 lock = threading.RLock()
@@ -91,7 +92,7 @@ def board(pid: str = ""):
 def public(r: dict, pid: str = ""):
     closed = r["status"] == "closed"
     v = {k: r[k] for k in ("id", "number", "title", "description", "duration",
-                           "win", "draw", "lose", "status", "ends_at")}
+                           "win", "draw", "lose", "status", "starts_at", "ends_at")}
     v["organizer_symbol"] = r["organizer_symbol"] if closed else None   # hidden until the round ends
     v["my_move"] = r["moves"].get(pid)
     v["my_result"] = r["results"].get(pid) if closed else None
@@ -147,6 +148,8 @@ def play(body: PlayIn):
         r = next((x for x in rounds if x["status"] == "open"), None)
         if not r:
             raise HTTPException(409, "No round is open right now")
+        if time.time() < r["starts_at"]:
+            raise HTTPException(409, "Wait for the countdown to finish")
         r["moves"][body.player_id] = body.symbol    # can be changed until time is up
     return {"ok": True}
 
@@ -164,7 +167,7 @@ def admin_state():
 def create_round(body: RoundIn):
     with lock:
         r = {"id": uuid.uuid4().hex[:8], **body.model_dump(), "status": "draft",
-             "ends_at": None, "moves": {}, "results": {}}
+             "starts_at": None, "ends_at": None, "moves": {}, "results": {}}
         rounds.append(r)
     return {"id": r["id"]}
 
@@ -208,7 +211,8 @@ def round_action(rid: str, action: Literal["announce", "start", "end"]):
             if r["organizer_symbol"] == "random":
                 r["organizer_symbol"] = random.choice(list(BEATS))
             r["status"] = "open"
-            r["ends_at"] = time.time() + r["duration"]
+            r["starts_at"] = time.time() + COUNTDOWN          # 3-2-1 countdown, then picks open
+            r["ends_at"] = r["starts_at"] + r["duration"]
         else:
             if r["status"] != "open":
                 raise HTTPException(409, "Round is not open")
