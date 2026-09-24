@@ -31,3 +31,6 @@ input,textarea,select{background:#0b2a23;border:1px solid var(--line);border-rad
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .feed{margin:0;padding:0}.feed li{list-style:none;padding:8px 0;border-bottom:1px solid var(--line)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.center{text-align:center;margin:0}
+.timer.countdown{font-size:6rem;color:var(--ok);animation:pop 1s ease-out infinite}
+@keyframes pop{0%{transform:scale(1.35);opacity:.4}40%{transform:scale(1);opacity:1}}
