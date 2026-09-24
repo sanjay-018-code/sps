@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, usePoll, useCountdown } from "./api.js";
+import { api, usePoll, useCountdown, useStartBeeps } from "./api.js";
 import { SYMBOLS, Pts, Leaderboard } from "./ui.jsx";
 
 const blank = { title: "", description: "", duration: 30, organizer_symbol: "random", win: 5, draw: 2, lose: 0 };
@@ -35,9 +35,11 @@ function RoundForm({ initial, onSave, onCancel, label }) {
 
 function Live({ r, offset, onEnd }) {
   const left = useCountdown(r.ends_at, offset);
+  const startIn = useCountdown(r.starts_at, offset);
+  useStartBeeps(startIn, r.id);
   return (
     <>
-      <b className="big">{left}s left</b>
+      <b className="big">{startIn > 0 ? `Starting in ${startIn}...` : `${left}s left`}</b>
       <span className="mut">{r.move_count} moves in. {SYMBOLS[r.organizer_symbol] ? `You are playing ${SYMBOLS[r.organizer_symbol].icon} ${SYMBOLS[r.organizer_symbol].label}` : ""}</span>
       <button className="btn danger" onClick={onEnd}>End round now</button>
     </>
