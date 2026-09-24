@@ -51,7 +51,7 @@ export default function Admin() {
   const [pw, setPw] = useState("");
   const [editing, setEditing] = useState(null);
   const [msg, setMsg] = useState("");
-  const { data, error } = usePoll(() => (key ? api("/admin/state", { key }) : Promise.resolve(null)), 1000, key);
+  const { data, error } = usePoll(() => (key ? api("/admin/state", { key }) : Promise.resolve(null)), 400, key);
   const rounds = data?.rounds || [];
   const last = rounds[rounds.length - 1];
 
